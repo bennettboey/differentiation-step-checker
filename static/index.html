@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step-Checker</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5d6677; --line: #dde1e8;
+    --ok: #1f7a4d; --ok-bg: #e6f4ec; --bad: #b42318; --bad-bg: #fdecea;
+    --warn: #8a5a00; --warn-bg: #fff4dc; --carry: #6b4fa0; --carry-bg: #f1ecfa;
+    --accent: #2754c5; --mono: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.5 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0; }
+  .sub { color: var(--muted); margin: 2px 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  label { font-weight: 600; display: block; margin: 10px 0 4px; }
+  input, textarea, select { width: 100%; font: 17px var(--mono); padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); }
+  textarea { min-height: 130px; resize: vertical; }
+  .help { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+  button { font: 600 16px "Segoe UI", system-ui, sans-serif; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+  button.secondary { background: #fff; color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .math { font-size: 1.3rem; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+  math { font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", math; math-style: normal; }
+  .pv { display: grid; grid-template-columns: 70px 1fr; gap: 6px 12px; align-items: center; }
+  .pv .tag { color: var(--muted); font-size: 0.9rem; }
+  .pv > .help { grid-column: 1 / -1; }
+  .err { color: var(--bad); font-size: 0.95rem; }
+  .verdict { font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+  .line { display: grid; grid-template-columns: 70px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; }
+  .line code { font: 16px var(--mono); }
+  .badge { font-size: 0.85rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .correct { background: var(--ok-bg); } .correct .badge { color: var(--ok); }
+  .incorrect { background: var(--bad-bg); } .incorrect .badge { color: var(--bad); }
+  .carries_error { background: var(--carry-bg); } .carries_error .badge { color: var(--carry); }
+  .unsure { background: var(--warn-bg); } .unsure .badge { color: var(--warn); }
+  .msg { grid-column: 2 / 4; font-size: 0.9rem; color: var(--muted); }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+  .hint { border-left: 5px solid var(--accent); }
+  .hint .label { font-size: 0.8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .hint .type { font-size: 1.1rem; font-weight: 700; margin: 4px 0; }
+  .hint .text { font-size: 1.05rem; margin-bottom: 12px; }
+  .reveal { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--bg); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Differentiation Step-Checker</h1>
+  <p class="sub">Runs entirely on this computer · <b>SymPy</b> checks every line · <b>Gemma 4</b> only suggests why a line is wrong</p>
+
+  <div class="card">
+    <h2>1. Your question and working</h2>
+    <label for="example">Load a test case (optional)</label>
+    <select id="example"><option value="">— type your own —</option></select>
+
+    <label for="fn">f(x) =</label>
+    <input id="fn" placeholder="x^2*sin(3x)     (or an implicit equation: x^2 + y^2 = 25)" autocomplete="off">
+
+    <label for="lines">Your working for f′(x), one line per row</label>
+    <textarea id="lines" placeholder="2x*sin(3x) + x^2*3cos(3x)&#10;2x*sin(3x) + 3x^2*cos(3x)"></textarea>
+    <div class="help">Write powers with ^ and functions with brackets: <code>x^2</code>, <code>sin(3x)^2</code>, <code>ln(x)</code>, <code>e^(2x)</code>, <code>sqrt(x)</code>, <code>arctan(x)</code>.</div>
+  </div>
+
+  <div class="card">
+    <h2>2. This is what your working looks like.</h2>
+    <div class="help" style="margin:-6px 0 10px">This is how the checker reads your input. Fix any typos before checking.</div>
+    <div id="preview" class="pv"><span class="help">Start typing above…</span></div>
+    <div class="row" style="margin-top:14px">
+      <button id="check" disabled>Check my working</button>
+    </div>
+  </div>
+
+  <div id="results" class="card hidden"></div>
+  <div id="hint" class="card hint hidden"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const lines = () => $("lines").value.split("\n").map(s => s.trim()).filter(Boolean);
+
+let examples = [], previewTimer = null, hintRun = 0;
+
+fetch("/api/examples").then(r => r.json()).then(list => {
+  examples = list;
+  for (const ex of list) $("example").insertAdjacentHTML("beforeend", `<option value="${ex.id}">${ex.id} · ${esc(ex.topic)} · ${esc(ex.function)}</option>`);
+});
+
+$("example").addEventListener("change", () => {
+  const ex = examples.find(e => e.id === $("example").value);
+  $("fn").value = ex ? ex.function : "";  // "type your own" starts from empty boxes
+  $("lines").value = ex ? ex.lines.join("\n") : "";
+  onEdit();
+});
+
+function onEdit() {
+  $("results").classList.add("hidden");
+  $("hint").classList.add("hidden");
+  hintRun++;  // ignore any hint still loading for the old input
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(updatePreview, 300);
+}
+// Once the student edits a loaded case, it is their own working, so stop showing the case name.
+for (const id of ["fn", "lines"]) $(id).addEventListener("input", () => { $("example").value = ""; onEdit(); });
+
+async function updatePreview() {
+  const fn = $("fn").value.trim(), ls = lines();
+  if (!fn) { $("preview").innerHTML = '<span class="help">Start typing above…</span>'; $("check").disabled = true; return; }
+  const p = await post("/api/preview", { function: fn, lines: ls });
+  const fnLabel = p.implicit ? "equation" : "f(x)";
+  let html = row(fnLabel, p.function);
+  p.lines.forEach((l, i) => html += row(`line ${i + 1}`, l));
+  $("preview").innerHTML = html;
+  $("check").disabled = !p.function.ok || ls.length === 0 || p.lines.some(l => !l.ok);
+}
+// MathML comes from SymPy on our own server (not raw user text), so it is inserted as markup.
+const row = (tag, r) => `<span class="tag">${tag}</span>` + (r.ok ? `<span class="math">${r.mathml}</span>` : `<span class="err">⚠ ${esc(r.error)}</span>`);
+
+const BADGES = {
+  correct: "✓ Correct",
+  incorrect: "✗ Incorrect",
+  carries_error: "↳ Carries the mistake",
+  unsure: "? Couldn't confirm",
+};
+
+$("check").addEventListener("click", async () => {
+  const fn = $("fn").value.trim(), ls = lines();
+  const t0 = performance.now();
+  const r = await post("/api/check", { function: fn, lines: ls });
+  const ms = Math.round(performance.now() - t0);
+  const box = $("results");
+  box.classList.remove("hidden");
+  if (r.error) { box.innerHTML = `<div class="err">⚠ ${esc(r.error)}</div>`; return; }
+  const unsure = r.lines.some(l => l.status === "unsure");
+  const verdict = r.first_error
+    ? `Line ${r.first_error} is the first incorrect line.`
+    : unsure ? "No incorrect line found, but some lines couldn't be confirmed." : "All lines are correct. ✓";
+  let html = `<h2>3. Result <span class="help">(checked by SymPy, not AI)</span></h2><div class="verdict">${verdict}</div>`;
+  for (const l of r.lines) {
+    html += `<div class="line ${l.status}"><span class="tag">Line ${l.number}</span><code>${esc(l.text)}</code><span class="badge">${BADGES[l.status]}</span>`;
+    if (l.status === "carries_error" || l.status === "unsure") html += `<span></span><span class="msg">${esc(l.message)}</span>`;
+    html += `</div>`;
+  }
+  html += `<div class="meta">Checked in ${ms} ms.</div>`;
+  box.innerHTML = html;
+  if (r.first_error) getHint(fn, ls, r); else $("hint").classList.add("hidden");
+});
+
+// Only a step SymPy has verified is ever shown. If Gemma's tries all failed, offer more tries
+// instead of falling back to the final answer, because the student needs the next step.
+function renderStep(step, lineNo, fn, ls) {
+  const tries = step.tries > 1 ? ` (after ${step.tries} tries)` : "";
+  if (step.verified) {
+    $("reveal").innerHTML = `<b>Correct version of your line ${lineNo}:</b><div class="math" style="margin-top:6px">${step.mathml}</div><div class="help" style="margin-top:6px">Written by Gemma, checked by SymPy ✓${tries}</div>`;
+    return;
+  }
+  $("reveal").innerHTML = `<div class="text">Gemma couldn't write a step that passes SymPy's check (${step.tries} tries), so nothing unverified is shown.</div><button class="secondary" id="again">Try again</button>`;
+  $("again").onclick = async () => {
+    $("reveal").innerHTML = `<div class="text">Asking Gemma for the step again…</div>`;
+    let s;
+    try { s = await post("/api/step", { function: fn, lines: ls }); } catch { s = { verified: false, tries: 0 }; }
+    renderStep(s, lineNo, fn, ls);
+  };
+}
+
+async function getHint(fn, ls, r) {
+  const run = ++hintRun, box = $("hint"), start = Date.now();
+  box.classList.remove("hidden");
+  box.innerHTML = `<div class="label">AI hint · Gemma 4 (on this computer)</div><div class="text" id="wait">Gemma is writing a hint about line ${r.first_error}… <span id="secs">0</span> s</div><div class="help">The result above is already final; the hint only explains it.</div>`;
+  const tick = setInterval(() => { const s = $("secs"); if (s) s.textContent = Math.round((Date.now() - start) / 1000); }, 500);
+  let h;
+  try { h = await post("/api/hint", { function: fn, lines: ls }); }
+  catch { h = { status: "unavailable" }; }
+  clearInterval(tick);
+  if (run !== hintRun) return;  // input changed while waiting
+  const sympyAnswer = `<b>A correct expression for the derivative (from SymPy):</b><div class="math" style="margin-top:6px">${r.derivative_mathml}</div><div class="help" style="margin-top:6px">Compare it with your line ${r.first_error} and find where they differ.</div>`;
+  const reveal = `<div id="reveal" class="reveal hidden">${sympyAnswer}</div>`;
+  if (h.status === "ok") {
+    box.innerHTML = `<div class="label">AI hint · may not be 100% accurate · ${h.seconds} s</div>
+      <div class="type">${esc(h.hint)}</div>
+      <div class="text help">Possible type: ${esc(h.error_type)}</div>
+      <div class="row"><button class="secondary" id="step">Show the correct step</button></div>
+      <div id="reveal" class="reveal hidden"></div>`;
+    renderStep(h.step, r.first_error, fn, ls);
+    $("step").onclick = () => { $("reveal").classList.remove("hidden"); $("step").disabled = true; };
+  } else if (h.status === "fallback") {
+    box.innerHTML = `<div class="label">General tip (Gemma's reply was unusable twice, so this is a fixed message)</div>
+      <div class="text">${esc(h.hint)}</div><button class="secondary" id="show">Show the correct derivative</button>${reveal}`;
+    $("show").onclick = () => $("reveal").classList.remove("hidden");
+  } else {
+    box.innerHTML = `<div class="label">No AI hint</div>
+      <div class="text">Gemma isn't running or didn't respond (start Ollama to get hints). The result above is still correct.</div><button class="secondary" id="show">Show the correct derivative</button>${reveal}`;
+    $("show").onclick = () => $("reveal").classList.remove("hidden");
+  }
+}
+</script>
+</body>
+</html>

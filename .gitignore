@@ -1,0 +1,9 @@
+# Private working notes (not part of the project)
+CLAUDE.md
+VIDEO_GUIDE.md
+.claude/
+
+# Build output and local environments
+dist/
+__pycache__/
+.venv/

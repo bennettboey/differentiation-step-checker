@@ -1,0 +1,194 @@
+{
+  "_about": "Differentiation test cases for the step-checker. Each 'working' line is the student's expression for f'(x) (or dy/dx for implicit cases). 'first_error_line' is 1-indexed, null = all lines correct. 'error_type' uses the fixed list: missed chain rule | product rule error | quotient rule order/sign | power rule | trig/exp/log derivative | algebra slip. Labels were checked with SymPy (see check_test_cases.py).",
+  "cases": [
+    {
+      "id": "P1",
+      "topic": "product rule",
+      "f": "x^2*sin(3x)",
+      "working": ["2x*sin(3x) + x^2*3cos(3x)", "2x*sin(3x) + 3x^2*cos(3x)", "x(2sin(3x) + 3x*cos(3x))"],
+      "first_error_line": null,
+      "error_type": null,
+      "note": "Fully correct working."
+    },
+    {
+      "id": "P2",
+      "topic": "product + chain rule",
+      "f": "x^2*sin(3x)",
+      "working": ["2x*sin(3x) + x^2*cos(3x)", "x(2sin(3x) + x*cos(3x))"],
+      "first_error_line": 1,
+      "error_type": "missed chain rule",
+      "note": "Persona scenario function. Forgot the factor 3 from sin(3x); line 2 factorises the wrong line correctly."
+    },
+    {
+      "id": "P3",
+      "topic": "product rule",
+      "f": "x^3*e^x",
+      "working": ["3x^2*e^x"],
+      "first_error_line": 1,
+      "error_type": "product rule error",
+      "note": "Classic (uv)' = u'v' mistake."
+    },
+    {
+      "id": "P4",
+      "topic": "product rule + trig",
+      "f": "x*cos(x)",
+      "working": ["cos(x) + x*sin(x)"],
+      "first_error_line": 1,
+      "error_type": "trig/exp/log derivative",
+      "note": "Used d/dx cos x = sin x (sign error). Product rule structure is right."
+    },
+    {
+      "id": "Q1",
+      "topic": "quotient rule",
+      "f": "(2x+1)/(x-3)",
+      "working": ["((x-3)*2 - (2x+1)*1)/(x-3)^2", "(2x - 6 - 2x - 1)/(x-3)^2", "-7/(x-3)^2"],
+      "first_error_line": null,
+      "error_type": null,
+      "note": "Fully correct working."
+    },
+    {
+      "id": "Q2",
+      "topic": "quotient rule",
+      "f": "x^2/(x+1)",
+      "working": ["(x^2*1 - (x+1)*2x)/(x+1)^2", "(x^2 - 2x^2 - 2x)/(x+1)^2", "(-x^2 - 2x)/(x+1)^2"],
+      "first_error_line": 1,
+      "error_type": "quotient rule order/sign",
+      "note": "Numerator terms swapped (u v' - v u'). Lines 2-3 simplify the wrong line correctly, so the answer is the exact negative of the truth."
+    },
+    {
+      "id": "Q3",
+      "topic": "quotient rule + simplification",
+      "f": "sin(x)/x",
+      "working": ["(x*cos(x) - sin(x))/x^2", "cos(x)/x - sin(x)/x^2", "cos(x)/x + sin(x)/x^2"],
+      "first_error_line": 3,
+      "error_type": "algebra slip",
+      "note": "Correct rule; sign flipped when rewriting on line 3."
+    },
+    {
+      "id": "Q4",
+      "topic": "quotient rule",
+      "f": "e^x/(x^2+1)",
+      "working": ["(e^x*(x^2+1) - e^x*2x)/(x^2+1)"],
+      "first_error_line": 1,
+      "error_type": "quotient rule order/sign",
+      "note": "Denominator not squared. No exact category in the fixed list; 'quotient rule order/sign' is the closest. Probe for whether the list is too coarse."
+    },
+    {
+      "id": "C1",
+      "topic": "chain rule",
+      "f": "(3x^2 - 5)^4",
+      "working": ["4(3x^2 - 5)^3*6x", "24x(3x^2 - 5)^3"],
+      "first_error_line": null,
+      "error_type": null,
+      "note": "Fully correct working."
+    },
+    {
+      "id": "C2",
+      "topic": "chain rule",
+      "f": "sqrt(1 + x^2)",
+      "working": ["1/(2sqrt(1 + x^2))"],
+      "first_error_line": 1,
+      "error_type": "missed chain rule",
+      "note": "Missing inner derivative 2x."
+    },
+    {
+      "id": "C3",
+      "topic": "chain rule (nested) + trig identity",
+      "f": "sin(4x)^2",
+      "working": ["2sin(4x)*cos(4x)*4", "8sin(4x)*cos(4x)", "4sin(8x)"],
+      "first_error_line": null,
+      "error_type": null,
+      "note": "Fully correct. Line 3 uses the double-angle identity, so it looks very different but is equivalent. Tests equivalence checking."
+    },
+    {
+      "id": "C4",
+      "topic": "chain rule (nested)",
+      "f": "e^(sin(2x))",
+      "working": ["e^(sin(2x))*cos(2x)"],
+      "first_error_line": 1,
+      "error_type": "missed chain rule",
+      "note": "Got the outer and middle layers but dropped the innermost factor 2."
+    },
+    {
+      "id": "E2",
+      "topic": "logarithm",
+      "f": "ln(5x)",
+      "working": ["1/(5x)"],
+      "first_error_line": 1,
+      "error_type": "missed chain rule",
+      "note": "Ambiguous diagnosis: could also be called a log-derivative error. Correct answer is 1/x."
+    },
+    {
+      "id": "E3",
+      "topic": "exponential (non-e base)",
+      "f": "2^x",
+      "working": ["x*2^(x-1)"],
+      "first_error_line": 1,
+      "error_type": "trig/exp/log derivative",
+      "note": "Applied the power rule to an exponential. Ambiguous between 'power rule' and 'trig/exp/log derivative'."
+    },
+    {
+      "id": "E4",
+      "topic": "product rule + log",
+      "f": "x^2*ln(x)",
+      "working": ["2x*ln(x) + x^2*(1/x)", "2x*ln(x) + x", "x(2ln(x) + x)"],
+      "first_error_line": 3,
+      "error_type": "algebra slip",
+      "note": "Correct differentiation; wrong when factorising out x on line 3."
+    },
+    {
+      "id": "W1",
+      "topic": "power rule (negative index)",
+      "f": "4/x^3",
+      "working": ["4*(-3)*x^(-3-1)", "-12x^(-2)"],
+      "first_error_line": 2,
+      "error_type": "power rule",
+      "note": "Line 1 correctly sets up the power rule. Line 2 evaluates -3-1 as -2 instead of -4."
+    },
+    {
+      "id": "I1",
+      "topic": "inverse trig",
+      "f": "arctan(2x)",
+      "working": ["1/(1 + 4x^2)"],
+      "first_error_line": 1,
+      "error_type": "missed chain rule",
+      "note": "Missing factor 2."
+    },
+    {
+      "id": "L1",
+      "topic": "long working (product + chain + factorising)",
+      "f": "(x^2+1)^3*(2x-1)^2",
+      "working": [
+        "3(x^2+1)^2*2x*(2x-1)^2 + (x^2+1)^3*2(2x-1)*2",
+        "6x(x^2+1)^2*(2x-1)^2 + 4(x^2+1)^3*(2x-1)",
+        "2(x^2+1)^2*(2x-1)*(3x(2x-1) + 2(x^2+1))",
+        "2(x^2+1)^2*(2x-1)*(6x^2 - 3x + 2x^2 + 2)",
+        "2(x^2+1)^2*(2x-1)*(8x^2 - 3x + 2)",
+        "2(x^2+1)^2*(2x-1)*(8x^2 + 3x + 2)"
+      ],
+      "first_error_line": 6,
+      "error_type": "algebra slip",
+      "note": "Five correct lines, then a sign slip on line 6. Probes context-limit/forgetting on long working."
+    },
+    {
+      "id": "M1",
+      "topic": "implicit differentiation (stretch)",
+      "kind": "implicit",
+      "equation": "x^2 + y^2 = 25",
+      "working": ["-2x/(2y)", "-x/y"],
+      "first_error_line": null,
+      "error_type": null,
+      "note": "Lines are dy/dx in terms of x and y. Fully correct."
+    },
+    {
+      "id": "M2",
+      "topic": "implicit differentiation (stretch)",
+      "kind": "implicit",
+      "equation": "x^2*y + y^3 = 2x",
+      "working": ["(2 - 2x*y)/(3y^2)"],
+      "first_error_line": 1,
+      "error_type": "product rule error",
+      "note": "Treated x^2*y as if only y depended on x: missing the x^2*dy/dx term. Correct: (2 - 2xy)/(x^2 + 3y^2)."
+    }
+  ]
+}
