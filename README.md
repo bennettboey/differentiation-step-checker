@@ -103,7 +103,7 @@ All three scripts use only the local model. Results are **appended** to the file
 | Rejected a correct line | C3 and L1 | never |
 | Named the error type correctly | – | 33% (thinking off), 62–69% (thinking on) |
 | Verified next step found | – | 45/45 runs (43 first try, 2 after a retry); an unverified step is never shown |
-| Time to verdict | 22–77 s on battery, 7–23 s plugged in | under 0.4 s (hint after ~5 s) |
+| Time to verdict | 22–77 s on battery, 7–23 s plugged in | 0.1–0.5 s (hint after ~6 s) |
 
 Details: `baseline_prompts.md`, `pipeline_results.md`, and the Model Limits Log in `limits_log.md`.
 
